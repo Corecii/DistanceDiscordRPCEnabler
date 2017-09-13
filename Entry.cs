@@ -11,7 +11,7 @@ namespace Corecii.LevelEditorSchemes
 {
     public class Entry : IPlugin
     {
-        public string FriendlyName => "Level Editor WASD";
+        public string FriendlyName => "Level Editor Schemes";
         public string Author => "Corecii";
         public string Contact => "SteamID: Corecii; Discord: Corecii#3019";
         public APILevel CompatibleAPILevel => APILevel.XRay;
