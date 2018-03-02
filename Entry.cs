@@ -9,7 +9,7 @@ namespace Corecii.DiscordRPCEnabler
 {
     public class Entry : IPlugin
     {
-        public string FriendlyName => "Distance RPC Enabler";
+        public string FriendlyName => "Discord Rich Presence Enabler";
         public string Author => "Corecii";
         public string Contact => "SteamID: Corecii; Discord: Corecii#3019";
         public APILevel CompatibleAPILevel => APILevel.XRay;
