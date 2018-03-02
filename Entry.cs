@@ -1,64 +1,69 @@
 ﻿using Spectrum.API;
 using Spectrum.API.Interfaces.Plugins;
 using Spectrum.API.Interfaces.Systems;
-using System.Collections.Generic;
 using System;
-using Spectrum.API.Configuration;
 using System.Reflection;
-using UnityEngine;
+using Harmony;
 
-namespace Corecii.LevelEditorSchemes
+namespace Corecii.DiscordRPCEnabler
 {
     public class Entry : IPlugin
     {
-        public string FriendlyName => "Level Editor Schemes";
+        public string FriendlyName => "Distance RPC Enabler";
         public string Author => "Corecii";
         public string Contact => "SteamID: Corecii; Discord: Corecii#3019";
         public APILevel CompatibleAPILevel => APILevel.XRay;
         public static string PluginVersion = "Version C.1.0.0";
 
-        static string[] toolNames = new string[] {
-            ToolInputCombos.unityToolInputCombosFileName_,
-            ToolInputCombos.blenderToolInputCombosFileName_
-        };
-
         public void Initialize(IManager manager)
         {
-            foreach (string name in toolNames)
+            try {
+                var harmony = HarmonyInstance.Create("com.corecii.distance.discordRpcEnabler");
+                harmony.PatchAll(Assembly.GetExecutingAssembly());
+            }
+            catch (Exception e)
             {
-                var toolInputBase = ToolInputCombos.Load(name);
-                var combos = toolInputBase.GetComponent<ToolInputCombos>();
-                combos.Save(name);
+                Console.WriteLine("Patching errors! " + e);
             }
         }
 
-        object callPrivateMethod(Type tp, object obj, string methodName, params object[] args)
+        [HarmonyPatch(typeof(DiscordController))]
+        [HarmonyPatch("Start")]
+        [HarmonyPriority(Priority.First)]
+        class Patch
         {
-            return tp.GetMethod(
-                methodName,
-                BindingFlags.NonPublic | BindingFlags.Instance
-            ).Invoke(obj, args);
+            static bool Prefix(DiscordController __instance)
+            {
+                try
+                {
+                    setPrivateField(__instance, "gameManager_", G.Sys.GameManager_);
+                    if (BuildType.useAdventureFinal_)
+                    {
+                        UnityEngine.Object.Destroy(__instance);
+                        return false;
+                    }
+                    DiscordRpc.UpdatePresence(ref __instance.presence);
+                    Console.WriteLine("DiscordRPC started!");
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Patch errors! " + e);
+                }
+                return false;
+            }
         }
 
-        object callPrivateMethod(object obj, string methodName, params object[] args)
-        {
-            return obj.GetType().GetMethod(
-                methodName,
-                BindingFlags.NonPublic | BindingFlags.Instance
-            ).Invoke(obj, args);
-        }
+        public void Shutdown() { }
 
-        object getPrivateField(object obj, string fieldName)
+        public static void setPrivateField(object obj, string fieldName, object value)
         {
-            return obj
+            obj
                 .GetType()
                 .GetField(
                     fieldName,
                     BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static
                 )
-                .GetValue(obj);
+                .SetValue(obj, value);
         }
-
-        public void Shutdown() { }
     }
 }
