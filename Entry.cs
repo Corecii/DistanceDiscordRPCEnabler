@@ -13,7 +13,7 @@ namespace Corecii.DiscordRPCEnabler
         public string Author => "Corecii";
         public string Contact => "SteamID: Corecii; Discord: Corecii#3019";
         public APILevel CompatibleAPILevel => APILevel.XRay;
-        public static string PluginVersion = "Version C.1.0.0";
+        public static string PluginVersion = "Version C.1.1.0";
 
         public void Initialize(IManager manager)
         {
@@ -23,14 +23,14 @@ namespace Corecii.DiscordRPCEnabler
             }
             catch (Exception e)
             {
-                Console.WriteLine("Patching errors! " + e);
+                Console.WriteLine("Patching errors!\n" + e);
             }
         }
 
         [HarmonyPatch(typeof(DiscordController))]
         [HarmonyPatch("Start")]
-        [HarmonyPriority(Priority.First)]
-        class Patch
+        [HarmonyPriority(Priority.Last)]
+        class PatchStart
         {
             static bool Prefix(DiscordController __instance)
             {
@@ -43,13 +43,33 @@ namespace Corecii.DiscordRPCEnabler
                         return false;
                     }
                     DiscordRpc.UpdatePresence(ref __instance.presence);
-                    Console.WriteLine("DiscordRPC started!");
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("Patch errors! " + e);
+                    Console.WriteLine("Start Patch errors!\n" + e);
                 }
                 return false;
+            }
+        }
+
+        [HarmonyPatch(typeof(DiscordController))]
+        [HarmonyPatch("UpdateNetworkDiscordInfo")]
+        class PatchUpdate
+        {
+            static void Postfix(DiscordController __instance)
+            {
+                try
+                {
+                    if (G.Sys.NetworkingManager_.IsOnline_)
+                    {
+                        __instance.presence.partyMax = Math.Max(G.Sys.PlayerManager_.TotalPlayerCount_, G.Sys.NetworkingManager_.maxPlayerCount_);
+                        __instance.presence.partySize = G.Sys.PlayerManager_.TotalPlayerCount_;
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("UpdateNetworkDiscordInfo Patch errors!\n" + e);
+                }
             }
         }
 
